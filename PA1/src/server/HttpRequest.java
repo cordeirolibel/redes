@@ -86,7 +86,6 @@ final class HttpRequest implements Runnable
 			"<BODY>Not Found <br> This is not the webpage you are looking for. </BODY></HTML>";
 		}
 		
-		
 		// Send the status line.
 		os.writeBytes(statusLine);
 		// Send the content type line.
@@ -103,13 +102,10 @@ final class HttpRequest implements Runnable
 			os.writeBytes(entityBody);
 		}
 		
-		
-		
 		// Close streams and socket.
 		os.close();
 		br.close();
 		socket.close();
-		
 	}
 	
 	private static void sendBytes(FileInputStream fis, OutputStream os)

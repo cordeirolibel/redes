@@ -1,8 +1,8 @@
 package server;
 
-import java.io.* ;
-import java.net.* ;
-import java.util.* ;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public final class WebServer
 {
@@ -16,7 +16,6 @@ public final class WebServer
 		
 		// Process HTTP service requests in an infinite loop.
 		while (true) {
-			
 			// Listen for a TCP connection request.
 			Socket client = server.accept();
 			
@@ -27,9 +26,5 @@ public final class WebServer
 			// Start the thread.
 			thread.start();
 		}
-
-		
-		
-		
 	}
 }

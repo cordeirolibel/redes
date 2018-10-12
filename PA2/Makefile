@@ -1,4 +1,7 @@
-all: clean_out output clean
+all: clean_out output test clean
+
+test: 
+	./output < teste
 
 output: PA2.o 
 	gcc PA2.o -o output

@@ -23,7 +23,7 @@
 /* to layer 5 via the students transport level protocol entities.         */
 struct msg {
   char data[20];
-  };
+};
 
 /* a packet is the data unit passed from layer 4 (students code) to layer */
 /* 3 (teachers code).  Note the pre-defined packet structure, which all   */
@@ -33,31 +33,77 @@ struct pkt {
    int acknum;
    int checksum;
    char payload[20];
-    };
+};
+
+void tolayer3(int AorB,struct pkt packet);
+void tolayer5(int AorB,char datasent[20]);
+
+/********* FUNCOES AUXILIARES *********/
+// para criar o checksum de uma mensagem
+int sum(struct msg message){
+  int i, soma = 0;
+  for (i=0;i<20;i++)
+    soma = message.data[i];
+  
+  return soma;
+}
+
 
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
+#define BUFFER_SIZE 10
 
+struct Entity{
+  int buffer_qntd;
+  int seqnum;
+  struct pkt buffer[BUFFER_SIZE];
+};
+struct Entity entityA;
+struct Entity entityB;
 
 
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(message)
   struct msg message;
 {
+  int i;
 
+  if (entityA.buffer_qntd == BUFFER_SIZE){
+    printf("A esta cheio!!\n");
+    return;
+  }
+
+  //===> Criando pacote
+  struct pkt* pacote = &entityA.buffer[entityA.buffer_qntd];
+  pacote->seqnum = entityA.seqnum;
+  pacote->checksum = sum(message);
+  for (i=0;i<20;i++)
+    pacote->payload[i] = message.data[i];
+  //pacote.acknum = ; A nao manda ack
+
+  entityA.buffer_qntd+=1;
+  tolayer3(0,*pacote);//?????
 }
 
 void B_output(message)  /* need be completed only for extra credit */
   struct msg message;
 {
-
+  //nao precisa fazer 
+  return;
 }
 
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(packet)
   struct pkt packet;
 {
-
+  if (packet.acknum != entityA.seqnum){
+    //perdeu pacote 
+    printf("  Pacote %d perdido\n",entityA.seqnum);
+    return;
+  }
+  
+  //pode enviar o proximo
+  entityA.seqnum += 1;
 }
 
 /* called when A's timer goes off */
@@ -70,6 +116,8 @@ void A_timerinterrupt()
 /* entity A routines are called. You can use it to do any initialization */
 void A_init()
 {
+  entityA.buffer_qntd = 0;
+  entityA.seqnum = 0;
 }
 
 
@@ -84,12 +132,16 @@ void B_input(packet)
 /* called when B's timer goes off */
 void B_timerinterrupt()
 {
+  //nao precisa fazer 
+  return;
 }
 
 /* the following rouytine will be called once (only) before any other */
 /* entity B routines are called. You can use it to do any initialization */
 void B_init()
 {
+  entityA.buffer_qntd = 0;
+  entityA.seqnum = 0;
 }
 
 

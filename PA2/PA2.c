@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
@@ -40,34 +41,34 @@ struct pkt {
 
 
 /* called from layer 5, passed the data to be sent to other side */
-A_output(message)
+void A_output(message)
   struct msg message;
 {
 
 }
 
-B_output(message)  /* need be completed only for extra credit */
+void B_output(message)  /* need be completed only for extra credit */
   struct msg message;
 {
 
 }
 
 /* called from layer 3, when a packet arrives for layer 4 */
-A_input(packet)
+void A_input(packet)
   struct pkt packet;
 {
 
 }
 
 /* called when A's timer goes off */
-A_timerinterrupt()
+void A_timerinterrupt()
 {
 
 }
 
 /* the following routine will be called once (only) before any other */
 /* entity A routines are called. You can use it to do any initialization */
-A_init()
+void A_init()
 {
 }
 
@@ -75,19 +76,19 @@ A_init()
 /* Note that with simplex transfer from a-to-B, there is no B_output() */
 
 /* called from layer 3, when a packet arrives for layer 4 at B*/
-B_input(packet)
+void B_input(packet)
   struct pkt packet;
 {
 }
 
 /* called when B's timer goes off */
-B_timerinterrupt()
+void B_timerinterrupt()
 {
 }
 
 /* the following rouytine will be called once (only) before any other */
 /* entity B routines are called. You can use it to do any initialization */
-B_init()
+void B_init()
 {
 }
 
@@ -141,7 +142,11 @@ int   ntolayer3;           /* number sent into layer 3 */
 int   nlost;               /* number lost in media */
 int ncorrupt;              /* number corrupted by media*/
 
-main()
+void init();
+void insertevent(struct event *p);
+void generate_next_arrival();
+
+void main()
 {
    struct event *eventptr;
    struct msg  msg2give;
@@ -223,7 +228,7 @@ terminate:
 
 
 
-init()                         /* initialize the simulator */
+void init()                         /* initialize the simulator */
 {
   int i;
   float sum, avg;
@@ -251,7 +256,7 @@ init()                         /* initialize the simulator */
     printf("It is likely that random number generation on your machine\n" );
     printf("is different from what this emulator expects.  Please take\n");
     printf("a look at the routine jimsrand() in the emulator code. Sorry. \n");
-    exit();
+    exit(0);
     }
 
    ntolayer3 = 0;
@@ -279,11 +284,11 @@ float jimsrand()
 /*  The next set of routines handle the event list   */
 /*****************************************************/
 
-generate_next_arrival()
+void generate_next_arrival()
 {
    double x,log(),ceil();
    struct event *evptr;
-    char *malloc();
+  //  char *malloc();
    float ttime;
    int tempint;
 
@@ -303,7 +308,7 @@ generate_next_arrival()
 }
 
 
-insertevent(p)
+void insertevent(p)
    struct event *p;
 {
    struct event *q,*qold;
@@ -341,7 +346,7 @@ insertevent(p)
          }
 }
 
-printevlist()
+void printevlist()
 {
   struct event *q;
   int i;
@@ -357,7 +362,7 @@ printevlist()
 /********************** Student-callable ROUTINES ***********************/
 
 /* called by students routine to cancel a previously-started timer */
-stoptimer(AorB)
+void stoptimer(AorB)
 int AorB;  /* A or B is trying to stop timer */
 {
  struct event *q,*qold;
@@ -387,14 +392,14 @@ int AorB;  /* A or B is trying to stop timer */
 }
 
 
-starttimer(AorB,increment)
+void starttimer(AorB,increment)
 int AorB;  /* A or B is trying to stop timer */
 float increment;
 {
 
  struct event *q;
  struct event *evptr;
- char *malloc();
+ //char *malloc();
 
  if (TRACE>2)
     printf("          START TIMER: starting timer at %f\n",time);
@@ -416,13 +421,13 @@ float increment;
 
 
 /************************** TOLAYER3 ***************/
-tolayer3(AorB,packet)
+void tolayer3(AorB,packet)
 int AorB;  /* A or B is trying to stop timer */
 struct pkt packet;
 {
  struct pkt *mypktptr;
  struct event *evptr,*q;
- char *malloc();
+ //char *malloc();
  float lastime, x, jimsrand();
  int i;
 
@@ -489,7 +494,7 @@ struct pkt packet;
   insertevent(evptr);
 }
 
-tolayer5(AorB,datasent)
+void tolayer5(AorB,datasent)
   int AorB;
   char datasent[20];
 {

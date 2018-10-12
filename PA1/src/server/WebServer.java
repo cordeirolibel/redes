@@ -22,8 +22,10 @@ public final class WebServer
 			
 			// Construct an object to process the HTTP request message.
 			HttpRequest request = new HttpRequest(client);//( ? );
+			
 			// Create a new thread to process the request.
 			Thread thread = new Thread(request);
+			
 			// Start the thread.
 			thread.start();
 		}

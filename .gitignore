@@ -1,3 +1,6 @@
+
+*.o
+
 # Compiled class file
 *.class
 

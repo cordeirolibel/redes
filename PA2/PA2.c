@@ -40,10 +40,12 @@ void tolayer5(int AorB,char datasent[20]);
 
 /********* FUNCOES AUXILIARES *********/
 // para criar o checksum de uma mensagem
-int sum(struct msg message){
+int sum(message)
+ char message[20];
+{
   int i, soma = 0;
   for (i=0;i<20;i++)
-    soma = message.data[i];
+    soma += message[i];
   
   return soma;
 }
@@ -76,7 +78,7 @@ void A_output(message)
   //===> Criando pacote
   struct pkt* pacote = &entityA.buffer[entityA.buffer_qntd];
   pacote->seqnum = entityA.seqnum;
-  pacote->checksum = sum(message);
+  pacote->checksum = sum(message.data);
   for (i=0;i<20;i++)
     pacote->payload[i] = message.data[i];
   //pacote.acknum = ; A nao manda ack
@@ -127,6 +129,15 @@ void A_init()
 void B_input(packet)
   struct pkt packet;
 {
+    if(sum(packet.payload) != packet.checksum)
+    {
+        printf("Deu bem ruim");
+        return;
+    }
+    printf("Checksum recebido: %d\n", packet.checksum);
+    printf("Checksum calculado: %d\n", sum(packet.payload));    
+    printf("Enviando\n");
+    tolayer5(1, packet.payload);
 }
 
 /* called when B's timer goes off */
@@ -492,7 +503,7 @@ struct pkt packet;
       if (TRACE>0)
 	printf("          TOLAYER3: packet being lost\n");
       return;
-    }
+ }
 
 /* make a copy of the packet student just gave me since he/she may decide */
 /* to do something with the packet after we return back to him/her */

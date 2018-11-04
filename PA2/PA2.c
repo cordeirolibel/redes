@@ -37,6 +37,8 @@ struct pkt {
 
 void tolayer3(int AorB,struct pkt packet);
 void tolayer5(int AorB,char datasent[20]);
+void stoptimer(int AorB);
+void starttimer(int AorB,float increment);
 
 /********* FUNCOES AUXILIARES *********/
 // para criar o checksum de uma mensagem
@@ -54,7 +56,7 @@ int sum(message)
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
 #define BUFFER_SIZE 10
-
+#define ESPERA 10
 struct Entity{
   int buffer_qntd;
   int seqnum;
@@ -71,7 +73,7 @@ void A_output(message)
   int i;
 
   if (entityA.buffer_qntd == BUFFER_SIZE){
-    printf("A esta cheio!!\n");
+    printf("==> Erro: Entity A esta cheio!!\n");
     return;
   }
 
@@ -84,7 +86,8 @@ void A_output(message)
   //pacote.acknum = ; A nao manda ack
 
   entityA.buffer_qntd+=1;
-  tolayer3(0,*pacote);//?????
+  starttimer(0, ESPERA);
+  tolayer3(0,*pacote);
 }
 
 void B_output(message)  /* need be completed only for extra credit */
@@ -98,12 +101,15 @@ void B_output(message)  /* need be completed only for extra credit */
 void A_input(packet)
   struct pkt packet;
 {
+  int a;
   if (packet.acknum != entityA.seqnum){
     //perdeu pacote 
-    printf("  Pacote %d perdido\n",entityA.seqnum);
+    printf("==> Pacote %d perdido\n",entityA.seqnum);
     return;
   }
-  
+  else
+    //pacote OK - para o timer
+    stoptimer(0);
   //pode enviar o proximo
   entityA.seqnum += 1;
 }
@@ -111,7 +117,16 @@ void A_input(packet)
 /* called when A's timer goes off */
 void A_timerinterrupt()
 {
+    if (entityA.buffer_qntd == 0){
+      printf("==> Erro!\n");
+      return;
+    }
 
+    //reenviar o pacote
+    printf("==> Reenviando pacote %d\n",entityA.buffer_qntd-1);
+    struct pkt* pacote = &entityA.buffer[entityA.buffer_qntd-1];
+    starttimer(0, ESPERA);
+    tolayer3(0,*pacote);
 }
 
 /* the following routine will be called once (only) before any other */
@@ -131,12 +146,13 @@ void B_input(packet)
 {
     if(sum(packet.payload) != packet.checksum)
     {
-        printf("Deu bem ruim");
+        printf("==> Erro: Checksum!\n");
+        printf("==> Checksum recebido: %d\n", packet.checksum);
+        printf("==> Checksum calculado: %d\n", sum(packet.payload));    
         return;
     }
-    printf("Checksum recebido: %d\n", packet.checksum);
-    printf("Checksum calculado: %d\n", sum(packet.payload));    
-    printf("Enviando\n");
+    
+    printf("==> Recebido\n");
     tolayer5(1, packet.payload);
 }
 

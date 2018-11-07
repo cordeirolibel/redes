@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
@@ -55,16 +56,15 @@ int sum(message)
 
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
-#define BUFFER_SIZE 10
-#define ESPERA 10
+#define ESPERA 15
 struct Entity{
-  int buffer_qntd;
   int seqnum;
-  struct pkt buffer[BUFFER_SIZE];
+  int acknum;
+  bool sending;
+  struct pkt package_being_sent;
 };
 struct Entity entityA;
 struct Entity entityB;
-
 
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(message)
@@ -72,22 +72,21 @@ void A_output(message)
 {
   int i;
 
-  if (entityA.buffer_qntd == BUFFER_SIZE){
-    printf("==> Erro: Entity A esta cheio!!\n");
+  if (entityA.sending){
+    printf("==> Erro: Uma mensagem já está sendo enviada!!\n");
     return;
   }
 
   //===> Criando pacote
-  struct pkt* pacote = &entityA.buffer[entityA.buffer_qntd];
-  pacote->seqnum = entityA.seqnum;
-  pacote->checksum = sum(message.data);
+  entityA.package_being_sent.seqnum = entityA.seqnum;
+  entityA.package_being_sent.checksum = sum(message.data);
   for (i=0;i<20;i++)
-    pacote->payload[i] = message.data[i];
-  //pacote.acknum = ; A nao manda ack
+    entityA.package_being_sent.payload[i] = message.data[i];
 
-  entityA.buffer_qntd+=1;
+  //===> Enviando pacote
+  entityA.sending = true;
   starttimer(0, ESPERA);
-  tolayer3(0,*pacote);
+  tolayer3(0, entityA.package_being_sent);
 }
 
 void B_output(message)  /* need be completed only for extra credit */
@@ -101,39 +100,41 @@ void B_output(message)  /* need be completed only for extra credit */
 void A_input(packet)
   struct pkt packet;
 {
-  int a;
-  if (packet.acknum != entityA.seqnum){
-    //perdeu pacote 
-    printf("==> Pacote %d perdido\n",entityA.seqnum);
-    return;
-  }
-  else
-    //pacote OK - para o timer
+	if (packet.acknum != entityA.seqnum)
+	{
+		printf("==> Pacote %d perdido\n", entityA.seqnum);
+
+	    //reenvia pacote
+	    starttimer(0, ESPERA);
+	    tolayer3(0, entityA.package_being_sent);
+	    return;
+	}
+
+	//Recebeu ack indicando sucesso
     stoptimer(0);
-  //pode enviar o proximo
-  entityA.seqnum += 1;
+    entityA.seqnum = 1 - entityA.seqnum; //pode enviar o proximo
+    entityA.sending = false;
 }
 
 /* called when A's timer goes off */
 void A_timerinterrupt()
 {
-    if (entityA.buffer_qntd == 0){
+    if (!entityA.sending){
       printf("==> Erro!\n");
       return;
     }
 
     //reenviar o pacote
-    printf("==> Reenviando pacote %d\n",entityA.buffer_qntd-1);
-    struct pkt* pacote = &entityA.buffer[entityA.buffer_qntd-1];
+    printf("==> Reenviando pacote.\n");
     starttimer(0, ESPERA);
-    tolayer3(0,*pacote);
+    tolayer3(0, entityA.package_being_sent);
 }
 
 /* the following routine will be called once (only) before any other */
 /* entity A routines are called. You can use it to do any initialization */
 void A_init()
 {
-  entityA.buffer_qntd = 0;
+  entityA.sending = false;
   entityA.seqnum = 0;
 }
 
@@ -144,16 +145,34 @@ void A_init()
 void B_input(packet)
   struct pkt packet;
 {
-    if(sum(packet.payload) != packet.checksum)
-    {
-        printf("==> Erro: Checksum!\n");
-        printf("==> Checksum recebido: %d\n", packet.checksum);
-        printf("==> Checksum calculado: %d\n", sum(packet.payload));    
-        return;
-    }
-    
-    printf("==> Recebido\n");
-    tolayer5(1, packet.payload);
+	bool sucesso = true;
+
+	if(sum(packet.payload) != packet.checksum)
+	{
+		printf("==> Erro: Checksum!\n");
+    	printf("==> Checksum recebido: %d\n", packet.checksum);
+    	printf("==> Checksum calculado: %d\n", sum(packet.payload));
+    	sucesso = false;
+	}
+	else if(packet.seqnum == entityB.acknum)
+	{
+    	printf("==> Erro: Pacote repetido!\n");
+    	sucesso = false;
+	}
+
+	if (sucesso)
+	{
+		printf("==> Recebido\n");
+    	entityB.acknum = packet.seqnum;
+    	tolayer5(1, packet.payload);
+	}
+
+	struct pkt packet_retorno;
+    packet_retorno.seqnum = 0;
+    packet_retorno.acknum = entityB.acknum;
+    packet_retorno.checksum = 0;
+    tolayer3(1, packet_retorno);
+    return;
 }
 
 /* called when B's timer goes off */
@@ -167,8 +186,7 @@ void B_timerinterrupt()
 /* entity B routines are called. You can use it to do any initialization */
 void B_init()
 {
-  entityA.buffer_qntd = 0;
-  entityA.seqnum = 0;
+  entityB.acknum = -1;
 }
 
 

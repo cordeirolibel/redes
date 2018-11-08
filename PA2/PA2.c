@@ -100,6 +100,7 @@ void B_output(message)  /* need be completed only for extra credit */
 void A_input(packet)
   struct pkt packet;
 {
+    stoptimer(0);
 	if (packet.acknum != entityA.seqnum)
 	{
 		printf("==> Pacote %d perdido\n", entityA.seqnum);
@@ -111,7 +112,6 @@ void A_input(packet)
 	}
 
 	//Recebeu ack indicando sucesso
-    stoptimer(0);
     entityA.seqnum = 1 - entityA.seqnum; //pode enviar o proximo
     entityA.sending = false;
 }
